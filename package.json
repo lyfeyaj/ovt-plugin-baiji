@@ -1,0 +1,30 @@
+{
+  "name": "ovt-plugin-baiji",
+  "version": "1.0.0",
+  "description": "ovt with baiji functionalities",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test --reporter nyan"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lyfeyaj/ovt-plugin-baiji.git"
+  },
+  "keywords": [
+    "ovt",
+    "plugin",
+    "baiji"
+  ],
+  "author": "Felix liu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lyfeyaj/ovt-plugin-baiji/issues"
+  },
+  "homepage": "https://github.com/lyfeyaj/ovt-plugin-baiji#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "ovt": "^1.1.1"
+  }
+}
