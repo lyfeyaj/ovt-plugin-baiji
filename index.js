@@ -2,12 +2,21 @@
 
 const assert = require('assert');
 
-let OVT;
+// ovt reference
+let Ovt;
+
+// Types mappings
+const typeMappings = {
+  array: ['any'],
+  object: 'any',
+  alternatives: 'any',
+  func: 'any',
+  buffer: 'any',
+  regexp: 'any'
+};
 
 function typeMapper(type) {
-  if (type === 'array') return ['any'];
-  if (type === 'object') return 'any';
-  return type;
+  return typeMappings[type] || type || 'any';
 }
 
 // ovt Schema extension, transfer nested children into baiji accepted params
@@ -39,20 +48,20 @@ function ovtPluginBaiji(ovt) {
   };
 
   // Add ovt reference
-  OVT = ovt;
+  Ovt = ovt;
 }
 
 ovtPluginBaiji.middleware = function(fn, options) {
-  assert(OVT, 'ovt-plugin-baiji must be required before middleware being called');
+  assert(Ovt, 'ovt-plugin-baiji must be required before middleware being called');
   assert(typeof fn === 'function', `${fn} is not a valid function`);
 
   options = options || {};
 
-  return function(ctx, next) {
+  return function ovtMiddleware(ctx, next) {
     let schema = (ctx._method.params || [])._schema;
 
     if (schema && schema.isOvt) {
-      let result = OVT.validate(ctx.args, schema, options);
+      let result = Ovt.validate(ctx.args, schema, options);
 
       if (result.errors) {
         ctx.ovtErrors = result.errors.flatten() || [];
