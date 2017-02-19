@@ -65,6 +65,7 @@ ovtPluginBaiji.middleware = function(fn, options) {
 
       if (result.errors) {
         ctx.ovtErrors = result.errors.flatten() || [];
+        ctx.ovtErrors.origin = result.errors;
         fn(ctx, next);
       } else {
         ctx.args = result.value;
