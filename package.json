@@ -1,6 +1,6 @@
 {
   "name": "ovt-plugin-baiji",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ovt with baiji functionalities",
   "main": "index.js",
   "scripts": {
