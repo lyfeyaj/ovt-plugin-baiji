@@ -38,7 +38,7 @@ function ovtPluginBaiji(ovt) {
         notes: child._notes.join(', '),
         tags: child._tags.join(', '),
         http: child._virtuals['http'],
-        inner: child.toObject()
+        params: child.toObject()
       });
     }
 
