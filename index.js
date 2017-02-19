@@ -15,6 +15,8 @@ const typeMappings = {
   regexp: 'any'
 };
 
+const supportTypes = ['object', 'array'];
+
 function typeMapper(type) {
   return typeMappings[type] || type || 'any';
 }
@@ -22,27 +24,49 @@ function typeMapper(type) {
 // ovt Schema extension, transfer nested children into baiji accepted params
 function ovtPluginBaiji(ovt) {
   ovt.Schema.prototype.toObject = function() {
-    if (this._type !== 'object') return [];
+    if (!~supportTypes.indexOf(this._type)) return [];
 
     let params = [];
+    let inner = this._inner;
 
-    for (let name in this._inner.children) {
-      let child = this._inner.children[name];
+    if (this._type === 'array') {
+      // Only allow to parse array schema with one object schema item
+      let cond = inner.inclusions.length === 1 && inner.requireds.length === 0;
+      cond = cond || (inner.inclusions.length === 0 && inner.requireds.length === 1);
 
-      // Add param item
-      params.push({
-        name: name,
-        type: typeMapper(child._type),
-        description: child._description,
-        label: child._label,
-        notes: child._notes.join(', '),
-        tags: child._tags.join(', '),
-        http: child._virtuals['http'],
-        params: child.toObject()
-      });
+      if (!cond) return [];
+
+      let child = inner.inclusions[0] || inner.requireds[0];
+
+      // Only support inner object schema
+      if (child._type !== 'object') return [];
+
+      return child.toObject();
+    } else {
+      for (let name in inner.children) {
+        let child = inner.children[name];
+        let innerParams = child.toObject();
+
+        // Add param item
+        let param = {
+          name: name,
+          type: typeMapper(child._type),
+          description: child._description,
+          label: child._label,
+          notes: child._notes.join(', '),
+          tags: child._tags.join(', '),
+          value: child._virtuals['value'],
+        };
+
+        // Add inner params
+        if (innerParams.length) param.params = innerParams;
+
+        params.push(param);
+      }
+
+      // Add schema reference
+      params._schema = this;
     }
-
-    params._schema = this;
 
     return params;
   };
