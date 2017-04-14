@@ -21,7 +21,12 @@ function typeMapper(type) {
   return typeMappings[type] || type || 'any';
 }
 
-// ovt Schema extension, transfer nested children into baiji accepted params
+// ovt Schema extension, transfer nested children into baiji accepted params schema
+// [
+//   { name: 'gender', type: 'string' },
+//   { name: 'profile', type: 'object' },
+//   { name: 'hobbies', type: ['string'] }
+// ]
 function ovtPluginBaiji(ovt) {
   ovt.Schema.prototype.toObject = function() {
     if (!~supportTypes.indexOf(this._type)) return [];
