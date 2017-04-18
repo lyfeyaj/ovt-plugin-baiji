@@ -17,8 +17,29 @@ const typeMappings = {
 
 const supportTypes = ['object', 'array'];
 
-function typeMapper(type) {
-  return typeMappings[type] || type || 'any';
+function chooseType(schema) {
+  let type = schema._type || 'any';
+
+  if (isPredictableArray(schema)) {
+    let child = schema._inner.inclusions[0] || schema._inner.requireds[0];
+    return typeMappings[child._type] || type;
+  } else {
+    return typeMappings[type] || type;
+  }
+}
+
+// Check whether array schema is predictable
+function isPredictableArray(schema) {
+  if (schema._type === 'array') {
+    let inner = schema._inner;
+    // Only allow to parse array schema with one object schema item
+    let cond = inner.inclusions.length === 1 && inner.requireds.length === 0;
+    cond = cond || (inner.inclusions.length === 0 && inner.requireds.length === 1);
+
+    return cond;
+  } else {
+    return false;
+  }
 }
 
 // ovt Schema extension, transfer nested children into baiji accepted params schema
@@ -35,11 +56,7 @@ function ovtPluginBaiji(ovt) {
     let inner = this._inner;
 
     if (this._type === 'array') {
-      // Only allow to parse array schema with one object schema item
-      let cond = inner.inclusions.length === 1 && inner.requireds.length === 0;
-      cond = cond || (inner.inclusions.length === 0 && inner.requireds.length === 1);
-
-      if (!cond) return [];
+      if (!isPredictableArray(this)) return [];
 
       let child = inner.inclusions[0] || inner.requireds[0];
 
@@ -55,7 +72,7 @@ function ovtPluginBaiji(ovt) {
         // Add param item
         let param = {
           name: name,
-          type: typeMapper(child._type),
+          type: chooseType(child),
           description: child._description,
           required: !!child._methods.required,
           default: child._defaultValue,
