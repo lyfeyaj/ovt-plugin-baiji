@@ -57,6 +57,8 @@ function ovtPluginBaiji(ovt) {
           name: name,
           type: typeMapper(child._type),
           description: child._description,
+          required: !!child._methods.required,
+          default: !!child._defaultValue,
           label: child._label,
           notes: child._notes.join(', '),
           tags: child._tags.join(', '),
