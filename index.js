@@ -17,19 +17,30 @@ const typeMappings = {
 
 const supportTypes = ['object', 'array'];
 
+// Choose type for schema
 function chooseType(schema) {
   let type = schema._type || 'any';
 
-  if (isPredictableArray(schema)) {
+  if (isPredictableArraySchema(schema)) {
     let child = schema._inner.inclusions[0] || schema._inner.requireds[0];
-    return typeMappings[child._type] || type;
+
+    if (isPredictableArraySchema(child)) {
+      return ['array'];
+    } else {
+      if (child._type === 'array') {
+        return typeMappings[child._type];
+      } else {
+        return [typeMappings[child._type] || child._type];
+      }
+    }
   } else {
     return typeMappings[type] || type;
   }
 }
 
-// Check whether array schema is predictable
-function isPredictableArray(schema) {
+// Check whether array schema is predictable:
+//    => with only one schema in `inclusions` or `requireds`
+function isPredictableArraySchema(schema) {
   if (schema._type === 'array') {
     let inner = schema._inner;
     // Only allow to parse array schema with one object schema item
@@ -45,8 +56,9 @@ function isPredictableArray(schema) {
 // ovt Schema extension, transfer nested children into baiji accepted params schema
 // [
 //   { name: 'gender', type: 'string' },
-//   { name: 'profile', type: 'object' },
+//   { name: 'profile', type: 'object', params: [{ name: 'age', type: 'number' }] },
 //   { name: 'hobbies', type: ['string'] }
+//   { name: 'hobbies', type: ['array'], params: [{ type: 'string' }] }
 // ]
 function ovtPluginBaiji(ovt) {
   ovt.Schema.prototype.toObject = function() {
@@ -56,14 +68,34 @@ function ovtPluginBaiji(ovt) {
     let inner = this._inner;
 
     if (this._type === 'array') {
-      if (!isPredictableArray(this)) return [];
+      if (!isPredictableArraySchema(this)) return [];
 
       let child = inner.inclusions[0] || inner.requireds[0];
 
-      // Only support inner object schema
-      if (child._type !== 'object') return [];
+      let innerParams = child.toObject();
 
-      return child.toObject();
+      // Handle inner object type
+      if (child._type === 'object') return innerParams;
+
+      // Handle inner array type
+      if (child._type === 'array') {
+        let param = {
+          type: chooseType(child),
+          description: child._description,
+          required: !!child._methods.required,
+          default: child._defaultValue,
+          label: child._label,
+          notes: child._notes.join(', '),
+          tags: child._tags.join(', '),
+          value: child._virtuals['value'],
+        };
+
+        if (innerParams.length) param.params = innerParams;
+
+        return [param];
+      }
+
+      return [];
     } else {
       for (let name in inner.children) {
         let child = inner.children[name];
