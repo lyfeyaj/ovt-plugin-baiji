@@ -21,7 +21,9 @@
     "url": "https://github.com/lyfeyaj/ovt-plugin-baiji/issues"
   },
   "homepage": "https://github.com/lyfeyaj/ovt-plugin-baiji#readme",
-  "dependencies": {},
+  "dependencies": {
+    "lodash.intersection": "^4.4.0"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "mocha": "^3.2.0",

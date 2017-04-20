@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const intersection = require('lodash.intersection');
 
 // ovt reference
 let Ovt;
@@ -14,6 +15,14 @@ const typeMappings = {
   buffer: 'any',
   regexp: 'any'
 };
+
+// Enum methods
+const enumMethods = [
+  'valid',
+  'only',
+  'whitelist',
+  'oneOf'
+];
 
 const supportTypes = ['object', 'array'];
 
@@ -53,6 +62,44 @@ function isPredictableArraySchema(schema) {
   }
 }
 
+// Build param from schema
+function buildParam(schema) {
+  if (!schema) return {};
+
+  // Extract enum values
+  let enumValues;
+  enumMethods.forEach(function(name) {
+    let method = schema._methods[name];
+    if (method) {
+      let args = method.args;
+      if (args.length === 1 && Array.isArray(args[0])) {
+        args = args[0];
+      }
+
+      if (!enumValues) {
+        enumValues = Array.prototype.slice.call(args);
+      } else {
+        enumValues = intersection(enumValues, args);
+      }
+    }
+  });
+
+  let param = {
+    type: chooseType(schema),
+    description: schema._description,
+    required: !!schema._methods.required,
+    default: schema._defaultValue,
+    label: schema._label,
+    notes: schema._notes.join(', '),
+    tags: schema._tags.join(', '),
+    value: schema._virtuals['value'],
+  };
+
+  if (enumValues && enumValues.length) param.enum = enumValues;
+
+  return param;
+}
+
 // ovt Schema extension, transfer nested children into baiji accepted params schema
 // [
 //   { name: 'gender', type: 'string' },
@@ -79,16 +126,7 @@ function ovtPluginBaiji(ovt) {
 
       // Handle inner array type
       if (child._type === 'array') {
-        let param = {
-          type: chooseType(child),
-          description: child._description,
-          required: !!child._methods.required,
-          default: child._defaultValue,
-          label: child._label,
-          notes: child._notes.join(', '),
-          tags: child._tags.join(', '),
-          value: child._virtuals['value'],
-        };
+        let param = buildParam(child);
 
         if (innerParams.length) param.params = innerParams;
 
@@ -102,17 +140,10 @@ function ovtPluginBaiji(ovt) {
         let innerParams = child.toObject();
 
         // Add param item
-        let param = {
-          name: name,
-          type: chooseType(child),
-          description: child._description,
-          required: !!child._methods.required,
-          default: child._defaultValue,
-          label: child._label,
-          notes: child._notes.join(', '),
-          tags: child._tags.join(', '),
-          value: child._virtuals['value'],
-        };
+        let param = buildParam(child);
+
+        // Add name property
+        param.name = name;
 
         // Add inner params
         if (innerParams.length) param.params = innerParams;
