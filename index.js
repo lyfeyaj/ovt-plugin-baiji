@@ -72,10 +72,13 @@ function buildParam(schema) {
     let method = schema._methods[name];
     if (method) {
       let args = method.args;
+
+      // Treat [[1, 2, 3]] as [1, 2, 3]
       if (args.length === 1 && Array.isArray(args[0])) {
         args = args[0];
       }
 
+      // Combine common elements
       if (!enumValues) {
         enumValues = Array.prototype.slice.call(args);
       } else {
